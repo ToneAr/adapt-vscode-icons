@@ -1,0 +1,20 @@
+{
+  "file": "_file_file",
+  "folder": "_folder_folder",
+  "folderExpanded": "_folder_folder_open",
+  "rootFolder": "_folder_root",
+  "rootFolderExpanded": "_folder_root_open",
+  "iconDefinitions": {
+    "_file_file": { "iconPath": "../icons/files/file.svg" },
+    "_folder_folder": { "iconPath": "../icons/folders/folder.svg" },
+    "_folder_folder_open": { "iconPath": "../icons/foldersOpen/folder.svg" },
+    "_folder_root": { "iconPath": "../icons/folders/root.svg" },
+    "_folder_root_open": { "iconPath": "../icons/foldersOpen/root.svg" }
+  },
+  "fileExtensions": {},
+  "fileNames": {},
+  "folderNames": {},
+  "folderNamesExpanded": {},
+  "languageIds": {},
+  "hidesExplorerArrows": false
+}
