@@ -1,12 +1,12 @@
 {
-  "name": "adaptive-vscode-icons",
-  "displayName": "Adaptive Icons",
+  "name": "adapt-vscode-icons",
+  "displayName": "Adapt Icons",
   "description": "A dynamic icon theme that converts any icon set to monochrome using your system accent color",
-  "version": "0.0.1",
-  "publisher": "tonya",
+  "version": "0.9.0",
+  "publisher": "Tone",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ToneAr/adaptive-vscode-icons"
+    "url": "https://github.com/ToneAr/adapt-vscode-icons"
   },
   "engines": {
     "vscode": "^1.85.0"
@@ -17,6 +17,7 @@
   "keywords": [
     "icon theme",
     "icons",
+    "adapt",
     "adaptive",
     "system accent",
     "dynamic",
@@ -31,56 +32,32 @@
   "contributes": {
     "iconThemes": [
       {
-        "id": "adaptive-icons",
-        "label": "Adaptive Icons",
-        "path": "./themes/adaptive-icons.json"
+        "id": "adapt-icons",
+        "label": "Adapt Icons",
+        "path": "./themes/adapt-icons.json"
       }
     ],
     "commands": [
       {
-        "command": "adaptiveIcons.refresh",
-        "title": "Adaptive Icons: Refresh from System Accent"
+        "command": "adaptIcons.refresh",
+        "title": "Adapt Icons: Refresh from System Accent"
       },
       {
-        "command": "adaptiveIcons.setAccent",
-        "title": "Adaptive Icons: Set Custom Accent Color"
+        "command": "adaptIcons.setAccent",
+        "title": "Adapt Icons: Set Custom Accent Color"
       },
       {
-        "command": "adaptiveIcons.setIconSource",
-        "title": "Adaptive Icons: Set Icon Theme Source Path"
-      },
-      {
-        "command": "adaptiveIcons.debug",
-        "title": "Adaptive Icons: Debug Info"
+        "command": "adaptIcons.debug",
+        "title": "Adapt Icons: Debug Info"
       }
     ],
     "configuration": {
-      "title": "Adaptive Icons",
+      "title": "Adapt Icons",
       "properties": {
-        "adaptiveIcons.accentColor": {
+        "adaptIcons.accentColor": {
           "type": "string",
           "default": "",
-          "description": "Override the system accent color with a custom hex color (e.g., #3daee9). Leave empty to use system accent."
-        },
-        "adaptiveIcons.watchSystemAccent": {
-          "type": "boolean",
-          "default": true,
-          "description": "Automatically update icons when the system accent color changes"
-        },
-        "adaptiveIcons.watchInterval": {
-          "type": "number",
-          "default": 5000,
-          "description": "How often to check for system accent changes (in milliseconds)"
-        },
-        "adaptiveIcons.iconThemeSourcePath": {
-          "type": "string",
-          "default": "",
-          "description": "Path to the source icon theme (e.g., a-wl-file-icon-vscode). The icons will be converted to monochrome using the accent color."
-        },
-        "adaptiveIcons.autoReload": {
-          "type": "boolean",
-          "default": false,
-          "description": "Automatically reload VS Code when the accent color changes to update icons. Required because VS Code caches icon themes."
+          "description": "Custom accent color (e.g., #3daee9). Leave empty to detect from system."
         }
       }
     }

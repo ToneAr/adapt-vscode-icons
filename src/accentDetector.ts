@@ -1,5 +1,10 @@
 /**
  * System accent color detection for multiple platforms
+ * 
+ * This module provides accent color detection and watching for changes.
+ * 
+ * All external command executions are wrapped in try-catch with timeouts
+ * to prevent crashes if system state changes during detection.
  */
 
 import { execSync, spawn, ChildProcess } from 'child_process';
@@ -12,6 +17,11 @@ import { isValidHex, normalizeHex } from './colorUtils';
 let watcherProcesses: ChildProcess[] = [];
 
 const DEFAULT_ACCENT = '#5B9BD5';
+
+// Cache the last successfully detected accent to prevent crashes on repeated failures
+let cachedAccent: string | null = null;
+let cacheTimestamp: number = 0;
+const CACHE_TTL_MS = 30000; // Cache for 30 seconds
 
 // GNOME named accent colors mapping
 const GNOME_COLORS: Record<string, string> = {
@@ -29,16 +39,20 @@ const GNOME_COLORS: Record<string, string> = {
 
 /**
  * Execute a shell command and return the output
+ * Wrapped in multiple layers of error handling to prevent crashes
  */
 function execCommand(command: string): string | null {
   try {
     const result = execSync(command, {
       encoding: 'utf-8',
-      timeout: 5000,
+      timeout: 2000, // Reduced timeout to 2 seconds
       stdio: ['pipe', 'pipe', 'pipe'],
+      windowsHide: true, // Hide console window on Windows
+      maxBuffer: 1024 * 1024, // 1MB buffer limit
     });
-    return result.trim();
+    return result?.trim() || null;
   } catch {
+    // Silently fail - this is expected if the command doesn't exist or times out
     return null;
   }
 }
@@ -75,7 +89,6 @@ function getGnomeAccent(): string | null {
   const result = execCommand('gsettings get org.gnome.desktop.interface accent-color 2>/dev/null');
   
   if (result) {
-    // GNOME returns named colors like 'blue', 'green', etc.
     const colorName = result.replace(/['"]/g, '').trim();
     if (GNOME_COLORS[colorName]) {
       return GNOME_COLORS[colorName];
@@ -99,7 +112,6 @@ function getGtkCssAccent(): string | null {
       try {
         const content = readFileSync(cssPath, 'utf-8');
         
-        // Look for accent color definitions
         const patterns = [
           /@define-color\s+accent_color\s+(#[0-9a-fA-F]{6})/,
           /@define-color\s+accent_bg_color\s+(#[0-9a-fA-F]{6})/,
@@ -124,7 +136,6 @@ function getGtkCssAccent(): string | null {
  * Try to get accent color from macOS
  */
 function getMacosAccent(): string | null {
-  // macOS accent color from defaults
   const result = execCommand('defaults read -g AppleAccentColor 2>/dev/null');
   
   if (result !== null) {
@@ -147,7 +158,6 @@ function getMacosAccent(): string | null {
   // Fallback: try reading from NSColorPanel
   const nsResult = execCommand('defaults read NSGlobalDomain AppleHighlightColor 2>/dev/null');
   if (nsResult) {
-    // Format: "r g b" where values are 0.0-1.0
     const parts = nsResult.split(' ');
     if (parts.length >= 3) {
       const r = Math.round(parseFloat(parts[0]) * 255);
@@ -166,13 +176,11 @@ function getMacosAccent(): string | null {
  * Try to get accent color from Windows
  */
 function getWindowsAccent(): string | null {
-  // Windows stores accent color in registry
   const result = execCommand(
     'reg query "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\DWM" /v AccentColor 2>nul'
   );
   
   if (result) {
-    // Format: AccentColor    REG_DWORD    0xaabbggrr (ABGR format)
     const match = result.match(/AccentColor\s+REG_DWORD\s+0x([0-9a-fA-F]+)/i);
     if (match) {
       const abgr = parseInt(match[1], 16);
@@ -184,62 +192,88 @@ function getWindowsAccent(): string | null {
     }
   }
   
-  // Try PowerShell approach
-  const psResult = execCommand(
-    'powershell -Command "[Windows.UI.ViewManagement.UISettings,Windows.UI.ViewManagement,ContentType=WindowsRuntime]::new().GetColorValue([Windows.UI.ViewManagement.UIColorType]::Accent).ToString()" 2>nul'
-  );
-  
-  if (psResult) {
-    // Format: #AARRGGBB
-    const match = psResult.match(/#[0-9A-Fa-f]{8}/);
-    if (match) {
-      // Remove alpha channel
-      return '#' + match[0].substring(3);
-    }
-  }
-  
   return null;
 }
 
 /**
  * Detect the system accent color
  * Tries multiple methods in order of reliability
+ * 
+ * Uses caching to prevent excessive system calls and to provide
+ * a stable fallback if detection fails during system changes.
  */
 export function getSystemAccent(): string {
-  const platform = process.platform;
-
-  if (platform === 'linux') {
-    // Try KDE first (most reliable on KDE)
-    const kdeAccent = getKdeAccent();
-    if (kdeAccent && isValidHex(kdeAccent)) {
-      return normalizeHex(kdeAccent);
-    }
-
-    // Try GNOME
-    const gnomeAccent = getGnomeAccent();
-    if (gnomeAccent && isValidHex(gnomeAccent)) {
-      return normalizeHex(gnomeAccent);
-    }
-
-    // Try GTK CSS files
-    const gtkAccent = getGtkCssAccent();
-    if (gtkAccent && isValidHex(gtkAccent)) {
-      return normalizeHex(gtkAccent);
-    }
-  } else if (platform === 'darwin') {
-    const macAccent = getMacosAccent();
-    if (macAccent && isValidHex(macAccent)) {
-      return normalizeHex(macAccent);
-    }
-  } else if (platform === 'win32') {
-    const winAccent = getWindowsAccent();
-    if (winAccent && isValidHex(winAccent)) {
-      return normalizeHex(winAccent);
-    }
+  // Return cached value if still valid
+  const now = Date.now();
+  if (cachedAccent && (now - cacheTimestamp) < CACHE_TTL_MS) {
+    return cachedAccent;
   }
 
-  // Default fallback
+  let detectedAccent: string | null = null;
+
+  try {
+    const platform = process.platform;
+
+    if (platform === 'linux') {
+      // Try KDE first (most reliable on KDE)
+      const kdeAccent = getKdeAccent();
+      if (kdeAccent && isValidHex(kdeAccent)) {
+        detectedAccent = normalizeHex(kdeAccent);
+      }
+
+      // Try GNOME
+      if (!detectedAccent) {
+        const gnomeAccent = getGnomeAccent();
+        if (gnomeAccent && isValidHex(gnomeAccent)) {
+          detectedAccent = normalizeHex(gnomeAccent);
+        }
+      }
+
+      // Try GTK CSS files
+      if (!detectedAccent) {
+        const gtkAccent = getGtkCssAccent();
+        if (gtkAccent && isValidHex(gtkAccent)) {
+          detectedAccent = normalizeHex(gtkAccent);
+        }
+      }
+    } else if (platform === 'darwin') {
+      const macAccent = getMacosAccent();
+      if (macAccent && isValidHex(macAccent)) {
+        detectedAccent = normalizeHex(macAccent);
+      }
+    } else if (platform === 'win32') {
+      const winAccent = getWindowsAccent();
+      if (winAccent && isValidHex(winAccent)) {
+        detectedAccent = normalizeHex(winAccent);
+      }
+    }
+  } catch (error) {
+    // If any error occurs during detection, fall back to cache or default
+    console.error('Adapt Icons: Error detecting system accent', error);
+  }
+
+  // Update cache
+  if (detectedAccent) {
+    cachedAccent = detectedAccent;
+    cacheTimestamp = now;
+    return detectedAccent;
+  }
+
+  // If detection failed but we have a cached value, return it
+  if (cachedAccent) {
+    return cachedAccent;
+  }
+
+  // Final fallback
   return DEFAULT_ACCENT;
+}
+
+/**
+ * Clear the accent cache - useful when the user explicitly wants to refresh
+ */
+export function clearAccentCache(): void {
+  cachedAccent = null;
+  cacheTimestamp = 0;
 }
 
 /**
@@ -256,7 +290,7 @@ export function getWatchPaths(): string[] {
     // GTK configs
     paths.push(join(home, '.config/gtk-3.0/gtk.css'));
     paths.push(join(home, '.config/gtk-4.0/gtk.css'));
-    // GNOME dconf (harder to watch, but we can try)
+    // GNOME dconf
     paths.push(join(home, '.config/dconf/user'));
   } else if (platform === 'darwin') {
     // macOS preferences
@@ -264,7 +298,7 @@ export function getWatchPaths(): string[] {
   }
   // Windows uses registry, which we poll instead of watching
 
-  return paths.filter(p => existsSync(p));
+  return paths.filter((p) => existsSync(p));
 }
 
 /**
@@ -277,15 +311,19 @@ export type AccentChangeCallback = (newAccent: string) => void;
  */
 function watchGnomeAccent(callback: AccentChangeCallback): ChildProcess | null {
   try {
-    // Check if gsettings/dconf is available
+    // Check if dconf is available
     const testResult = execCommand('which dconf 2>/dev/null');
     if (!testResult) {
       return null;
     }
 
-    const proc = spawn('dconf', ['watch', '/org/gnome/desktop/interface/accent-color'], {
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
+    const proc = spawn(
+      'dconf',
+      ['watch', '/org/gnome/desktop/interface/accent-color'],
+      {
+        stdio: ['ignore', 'pipe', 'pipe'],
+      },
+    );
 
     let buffer = '';
     proc.stdout?.on('data', (data: Buffer) => {
@@ -318,17 +356,21 @@ function watchGnomeAccent(callback: AccentChangeCallback): ChildProcess | null {
 }
 
 /**
- * Watch for KDE Plasma accent color changes using dbus
+ * Watch for KDE Plasma accent color changes using dbus-monitor
  */
 function watchKdeAccent(callback: AccentChangeCallback): ChildProcess | null {
   try {
     // Use dbus-monitor to watch for KDE color scheme changes
-    const proc = spawn('dbus-monitor', [
-      '--session',
-      "type='signal',interface='org.kde.KGlobalSettings',member='notifyChange'",
-    ], {
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
+    const proc = spawn(
+      'dbus-monitor',
+      [
+        '--session',
+        "type='signal',interface='org.kde.KGlobalSettings',member='notifyChange'",
+      ],
+      {
+        stdio: ['ignore', 'pipe', 'pipe'],
+      },
+    );
 
     proc.stdout?.on('data', () => {
       // When we get any signal, re-read the accent color
@@ -350,17 +392,18 @@ function watchKdeAccent(callback: AccentChangeCallback): ChildProcess | null {
 }
 
 /**
- * Watch for macOS accent color changes
+ * Watch for macOS accent color changes using notifyutil
  */
 function watchMacosAccent(callback: AccentChangeCallback): ChildProcess | null {
   try {
+    // Use a background process that watches for AppleInterfaceThemeChangedNotification
     const script = `
       while true; do
         /usr/bin/notifyutil -1 "AppleInterfaceThemeChangedNotification"
         echo "CHANGED"
       done
     `;
-    
+
     const proc = spawn('bash', ['-c', script], {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
@@ -390,12 +433,13 @@ function watchMacosAccent(callback: AccentChangeCallback): ChildProcess | null {
  */
 function watchWindowsAccent(callback: AccentChangeCallback): ChildProcess | null {
   try {
+    // PowerShell script to watch for accent color changes via WMI events
     const psScript = `
       Add-Type -AssemblyName System.Windows.Forms
       $query = "SELECT * FROM RegistryValueChangeEvent WHERE Hive='HKEY_USERS' AND KeyPath='%s\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\DWM' AND ValueName='AccentColor'"
       $sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
       $finalQuery = $query -replace '%s', $sid
-      
+
       $watcher = New-Object System.Management.ManagementEventWatcher $finalQuery
       while ($true) {
         $event = $watcher.WaitForNextEvent()

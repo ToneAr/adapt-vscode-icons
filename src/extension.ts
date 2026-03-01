@@ -1,360 +1,509 @@
 /**
- * Adaptive Icons - VSCode Extension
+ * Adapt Icons - VSCode Extension
  * A dynamic icon theme that converts icons to monochrome using system accent color
+ * 
+ * The extension watches for system accent color changes and automatically
+ * regenerates icons when the accent changes.
  */
 
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { getSystemAccent, getWatchPaths, startAccentWatcher, stopAccentWatcher } from './accentDetector';
-import { generateAdaptiveIconTheme, generateFallbackIconTheme } from './iconThemeGenerator';
+import { getSystemAccent, clearAccentCache, startAccentWatcher, stopAccentWatcher, getWatchPaths } from './accentDetector';
+import { generateAdaptIconTheme, getLastGeneratedAccent } from './iconThemeGenerator';
 import { isValidHex, normalizeHex } from './colorUtils';
 
+let statusBarItem: vscode.StatusBarItem | null = null;
 let currentAccent: string | null = null;
 let watchInterval: NodeJS.Timeout | null = null;
 let fileWatchers: fs.FSWatcher[] = [];
-let statusBarItem: vscode.StatusBarItem | null = null;
 let nativeWatcherActive = false;
+
+// Mutex to prevent concurrent icon regeneration from multiple watchers
+let isRegenerating = false;
+// Debounce timer for auto-refresh
+let autoRefreshDebounceTimer: NodeJS.Timeout | null = null;
+const AUTO_REFRESH_DEBOUNCE_MS = 1000;
 
 /**
  * Activate the extension
  */
 export function activate(context: vscode.ExtensionContext) {
-  console.log('Adaptive Icons: Activating...');
-  console.log('Adaptive Icons: Extension path:', context.extensionPath);
+	console.log('Adapt Icons: Activating...');
 
-  // Create status bar item
-  statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 99);
-  statusBarItem.command = 'adaptiveIcons.refresh';
-  statusBarItem.tooltip = 'Click to refresh Adaptive Icons';
-  context.subscriptions.push(statusBarItem);
+	// Create status bar item
+	statusBarItem = vscode.window.createStatusBarItem(
+		vscode.StatusBarAlignment.Right,
+		99,
+	);
+	statusBarItem.command = 'adaptIcons.refresh';
+	context.subscriptions.push(statusBarItem);
 
-  // Register commands
-  const refreshCommand = vscode.commands.registerCommand('adaptiveIcons.refresh', () => {
-    refreshIcons(context, true);
-  });
+	// Register commands
+	const refreshCommand = vscode.commands.registerCommand(
+		'adaptIcons.refresh',
+		() => refreshIcons(context),
+	);
 
-  const setAccentCommand = vscode.commands.registerCommand('adaptiveIcons.setAccent', async () => {
-    const input = await vscode.window.showInputBox({
-      prompt: 'Enter a hex color (e.g., #3daee9) or leave empty to use system accent',
-      placeHolder: '#3daee9',
-      validateInput: (value) => {
-        if (value === '') return null;
-        if (!isValidHex(value)) {
-          return 'Please enter a valid hex color (e.g., #3daee9)';
-        }
-        return null;
-      },
-    });
+	const setAccentCommand = vscode.commands.registerCommand(
+		'adaptIcons.setAccent',
+		async () => {
+			const currentAccent = getConfiguredAccent();
+			const input = await vscode.window.showInputBox({
+				prompt: 'Enter a hex color (e.g., #3daee9) or leave empty to use system accent',
+				placeHolder: '#3daee9',
+				value: vscode.workspace.getConfiguration('adaptIcons').get<string>('accentColor') || '',
+				validateInput: (value) => {
+					if (value === '') return null;
+					if (!isValidHex(value)) {
+						return 'Please enter a valid hex color (e.g., #3daee9)';
+					}
+					return null;
+				},
+			});
 
-    if (input !== undefined) {
-      const config = vscode.workspace.getConfiguration('adaptiveIcons');
-      await config.update('accentColor', input, vscode.ConfigurationTarget.Global);
-      refreshIcons(context, true);
-    }
-  });
+			if (input !== undefined) {
+				const config = vscode.workspace.getConfiguration('adaptIcons');
+				await config.update(
+					'accentColor',
+					input,
+					vscode.ConfigurationTarget.Global,
+				);
+				// Refresh after setting
+				refreshIcons(context);
+			}
+		},
+	);
 
-  const setIconSourceCommand = vscode.commands.registerCommand('adaptiveIcons.setIconSource', async () => {
-    const options: vscode.OpenDialogOptions = {
-      canSelectFiles: false,
-      canSelectFolders: true,
-      canSelectMany: false,
-      openLabel: 'Select Icon Theme Source',
-      title: 'Select the root folder of your icon theme (e.g., a-wl-file-icon-vscode)',
-    };
+	const debugCommand = vscode.commands.registerCommand(
+		'adaptIcons.debug',
+		() => showDebugInfo(context),
+	);
 
-    const folderUri = await vscode.window.showOpenDialog(options);
-    if (folderUri && folderUri[0]) {
-      const folderPath = folderUri[0].fsPath;
-      
-      // Validate that this looks like an icon theme
-      const iconGeneratorPath = path.join(folderPath, 'iconGenerator', 'assets', 'icons');
-      if (!fs.existsSync(iconGeneratorPath)) {
-        vscode.window.showWarningMessage(
-          `The selected folder doesn't appear to contain an icon theme. Expected to find: ${iconGeneratorPath}`
-        );
-        return;
-      }
+	context.subscriptions.push(refreshCommand, setAccentCommand, debugCommand);
 
-      const config = vscode.workspace.getConfiguration('adaptiveIcons');
-      await config.update('iconThemeSourcePath', folderPath, vscode.ConfigurationTarget.Global);
-      
-      vscode.window.showInformationMessage(
-        `Adaptive Icons: Icon theme source set to ${folderPath}. Regenerating icons...`
-      );
-      
-      refreshIcons(context, true);
-    }
-  });
+	// Update status bar with current state
+	updateStatusBar(context);
+	
+	// Store current accent for change detection
+	currentAccent = getConfiguredAccent();
 
-  const debugCommand = vscode.commands.registerCommand('adaptiveIcons.debug', async () => {
-    const config = vscode.workspace.getConfiguration('adaptiveIcons');
-    const iconThemeSourcePath = config.get<string>('iconThemeSourcePath', '');
-    
-    const debugInfo = [
-      `Extension Path: ${context.extensionPath}`,
-      `Icon Source Path: ${iconThemeSourcePath}`,
-      `Current Accent: ${currentAccent}`,
-      `Icons Directory: ${path.join(context.extensionPath, 'icons')}`,
-      `Theme JSON: ${path.join(context.extensionPath, 'themes', 'adaptive-icons.json')}`,
-    ];
-    
-    // Check if icons exist
-    const iconsDir = path.join(context.extensionPath, 'icons', 'files');
-    if (fs.existsSync(iconsDir)) {
-      const files = fs.readdirSync(iconsDir);
-      debugInfo.push(`Icon files count: ${files.length}`);
-      
-      // Check a sample icon color
-      const sampleIcon = path.join(iconsDir, 'java.svg');
-      if (fs.existsSync(sampleIcon)) {
-        const content = fs.readFileSync(sampleIcon, 'utf-8');
-        const fillMatch = content.match(/fill="(#[0-9a-fA-F]+)"/);
-        debugInfo.push(`Sample icon (java.svg) color: ${fillMatch ? fillMatch[1] : 'not found'}`);
-      }
-    } else {
-      debugInfo.push('Icons directory not found!');
-    }
-    
-    // Show in output channel
-    const outputChannel = vscode.window.createOutputChannel('Adaptive Icons Debug');
-    outputChannel.clear();
-    outputChannel.appendLine('=== Adaptive Icons Debug Info ===');
-    for (const line of debugInfo) {
-      outputChannel.appendLine(line);
-    }
-    outputChannel.show();
-    
-    vscode.window.showInformationMessage('Debug info written to Output panel (Adaptive Icons Debug)');
-  });
+	// Set up watching for system accent changes
+	setupWatching(context);
 
-  context.subscriptions.push(refreshCommand, setAccentCommand, setIconSourceCommand, debugCommand);
+	// Listen for configuration changes
+	context.subscriptions.push(
+		vscode.workspace.onDidChangeConfiguration((e) => {
+			if (e.affectsConfiguration('adaptIcons')) {
+				// Re-setup watching if config changed
+				setupWatching(context);
+				updateStatusBar(context);
+			}
+		}),
+	);
 
-  // Listen for configuration changes
-  context.subscriptions.push(
-    vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration('adaptiveIcons')) {
-        refreshIcons(context, false);
-        setupWatching(context);
-      }
-    })
-  );
-
-  // Initial icon generation
-  refreshIcons(context, false);
-
-  // Set up watching for system accent changes
-  setupWatching(context);
-
-  console.log('Adaptive Icons: Activated successfully');
+	console.log('Adapt Icons: Activated successfully');
 }
 
 /**
  * Deactivate the extension
  */
 export function deactivate() {
-  stopWatching();
-  if (statusBarItem) {
-    statusBarItem.dispose();
-  }
-}
-
-/**
- * Refresh the icons
- */
-function refreshIcons(context: vscode.ExtensionContext, showNotification: boolean) {
-  const config = vscode.workspace.getConfiguration('adaptiveIcons');
-  const customAccent = config.get<string>('accentColor');
-
-  let accent: string;
-
-  if (customAccent && isValidHex(customAccent)) {
-    accent = normalizeHex(customAccent);
-  } else {
-    accent = getSystemAccent();
-  }
-
-  // Only regenerate if accent changed
-  if (accent === currentAccent && !showNotification) {
-    return;
-  }
-
-  const previousAccent = currentAccent;
-  currentAccent = accent;
-
-  // Generate icons
-  try {
-    const iconThemeSourcePath = config.get<string>('iconThemeSourcePath', '');
-    
-    console.log('Adaptive Icons: Generating icons...');
-    console.log('Adaptive Icons: Extension path:', context.extensionPath);
-    console.log('Adaptive Icons: Icon source path:', iconThemeSourcePath);
-    console.log('Adaptive Icons: Accent color:', accent);
-    
-    if (iconThemeSourcePath && fs.existsSync(iconThemeSourcePath)) {
-      const iconSourceDir = path.join(iconThemeSourcePath, 'iconGenerator', 'assets', 'icons');
-      if (fs.existsSync(iconSourceDir)) {
-        generateAdaptiveIconTheme(context.extensionPath, iconThemeSourcePath, accent);
-        console.log('Adaptive Icons: Full icon theme generated successfully');
-        
-        // Log a sample icon to verify color
-        const sampleIcon = path.join(context.extensionPath, 'icons', 'files', 'java.svg');
-        if (fs.existsSync(sampleIcon)) {
-          const content = fs.readFileSync(sampleIcon, 'utf-8');
-          const fillMatch = content.match(/fill="(#[0-9a-fA-F]+)"/);
-          console.log('Adaptive Icons: Sample icon (java.svg) fill color:', fillMatch ? fillMatch[1] : 'not found');
-        }
-      } else {
-        console.log('Adaptive Icons: Icon source not found, using fallback icons');
-        generateFallbackIconTheme(context.extensionPath, accent);
-      }
-    } else {
-      generateFallbackIconTheme(context.extensionPath, accent);
-      console.log('Adaptive Icons: Fallback icon theme generated');
-    }
-
-    // Update status bar
-    if (statusBarItem) {
-      statusBarItem.text = `$(file-media) ${accent}`;
-      statusBarItem.show();
-    }
-
-    const accentChanged = previousAccent && previousAccent !== accent;
-    
-    if (showNotification || accentChanged) {
-      vscode.window.showInformationMessage(
-        `Adaptive Icons: Updated to accent color ${accent}`
-      );
-    }
-
-    // Prompt to reload if necessary
-    promptReloadIfNeeded(accentChanged || showNotification);
-  } catch (error) {
-    console.error('Adaptive Icons: Error generating icons', error);
-    vscode.window.showErrorMessage(
-      `Adaptive Icons: Failed to generate icons - ${error}`
-    );
-  }
-}
-
-/**
- * Prompt user to reload VSCode to apply icon changes
- */
-function promptReloadIfNeeded(forceReload: boolean = false) {
-  const currentIconTheme = vscode.workspace.getConfiguration('workbench').get<string>('iconTheme');
-  const config = vscode.workspace.getConfiguration('adaptiveIcons');
-  const autoReload = config.get<boolean>('autoReload', false);
-  
-  const usingAdaptiveIcons = currentIconTheme === 'adaptive-icons';
-  
-  // If auto-reload is enabled and we're using adaptive icons, reload automatically
-  if (usingAdaptiveIcons && autoReload && forceReload) {
-    vscode.commands.executeCommand('workbench.action.reloadWindow');
-    return;
-  }
-  
-  if (usingAdaptiveIcons) {
-    vscode.window
-      .showInformationMessage(
-        'Adaptive Icons have been updated. Reload to apply changes?',
-        'Reload Window',
-        'Always Reload'
-      )
-      .then((selection) => {
-        if (selection === 'Reload Window') {
-          vscode.commands.executeCommand('workbench.action.reloadWindow');
-        } else if (selection === 'Always Reload') {
-          config.update('autoReload', true, vscode.ConfigurationTarget.Global);
-          vscode.commands.executeCommand('workbench.action.reloadWindow');
-        }
-      });
-  }
+	stopWatching();
+	if (statusBarItem) {
+		statusBarItem.dispose();
+		statusBarItem = null;
+	}
 }
 
 /**
  * Set up file watching and polling for accent changes
  */
 function setupWatching(context: vscode.ExtensionContext) {
-  stopWatching();
+	stopWatching();
 
-  const config = vscode.workspace.getConfiguration('adaptiveIcons');
-  const watchEnabled = config.get<boolean>('watchSystemAccent', true);
+	const config = vscode.workspace.getConfiguration('adaptIcons');
+	const customAccent = config.get<string>('accentColor');
 
-  if (!watchEnabled) {
-    return;
-  }
+	// Only set up watchers if using system accent (not custom)
+	if (customAccent && isValidHex(customAccent)) {
+		console.log('Adapt Icons: Using custom accent, skipping system watchers');
+		return;
+	}
 
-  const interval = config.get<number>('watchInterval', 5000);
-  const customAccent = config.get<string>('accentColor');
+	// Try to start native accent watcher first (most responsive)
+	nativeWatcherActive = startAccentWatcher((newAccent: string) => {
+		console.log(`Adapt Icons: Native watcher detected accent change to ${newAccent}`);
+		if (newAccent !== currentAccent) {
+			currentAccent = newAccent;
+			refreshIconsAuto(context);
+		}
+	});
 
-  // Only set up watchers if using system accent (not custom)
-  if (customAccent && isValidHex(customAccent)) {
-    console.log('Adaptive Icons: Using custom accent, skipping system watchers');
-    return;
-  }
+	if (nativeWatcherActive) {
+		console.log('Adapt Icons: Native accent watcher started successfully');
+	}
 
-  // Try to start native accent watcher first
-  nativeWatcherActive = startAccentWatcher((newAccent: string) => {
-    console.log(`Adaptive Icons: Native watcher detected accent change to ${newAccent}`);
-    if (newAccent !== currentAccent) {
-      refreshIcons(context, false);
-    }
-  });
+	// Set up file watchers for config files as a fallback
+	const watchPaths = getWatchPaths();
+	for (const watchPath of watchPaths) {
+		try {
+			const watcher = fs.watch(watchPath, { persistent: false }, () => {
+				// Debounce by waiting a short time before refreshing
+				setTimeout(() => {
+					const newAccent = getSystemAccent();
+					if (newAccent !== currentAccent) {
+						currentAccent = newAccent;
+						refreshIconsAuto(context);
+					}
+				}, 500);
+			});
+			fileWatchers.push(watcher);
+		} catch (err) {
+			// File might not exist or not be watchable, that's ok
+			console.log(`Adapt Icons: Could not watch ${watchPath}`);
+		}
+	}
 
-  if (nativeWatcherActive) {
-    console.log('Adaptive Icons: Native accent watcher started successfully');
-  }
+	// Also poll periodically as a final fallback
+	// Use a longer interval if native watcher is active
+	const pollInterval = nativeWatcherActive ? 10000 : 5000;
+	watchInterval = setInterval(() => {
+		const config = vscode.workspace.getConfiguration('adaptIcons');
+		const customAccent = config.get<string>('accentColor');
 
-  // Set up file watchers for config files as a fallback
-  const watchPaths = getWatchPaths();
-  for (const watchPath of watchPaths) {
-    try {
-      const watcher = fs.watch(watchPath, { persistent: false }, () => {
-        setTimeout(() => {
-          refreshIcons(context, false);
-        }, 500);
-      });
-      fileWatchers.push(watcher);
-    } catch (err) {
-      console.log(`Adaptive Icons: Could not watch ${watchPath}`, err);
-    }
-  }
-
-  // Also poll periodically as a final fallback
-  const pollInterval = nativeWatcherActive ? interval * 2 : interval;
-  watchInterval = setInterval(() => {
-    const config = vscode.workspace.getConfiguration('adaptiveIcons');
-    const customAccent = config.get<string>('accentColor');
-
-    if (!customAccent || !isValidHex(customAccent)) {
-      const newAccent = getSystemAccent();
-      if (newAccent !== currentAccent) {
-        refreshIcons(context, false);
-      }
-    }
-  }, pollInterval);
+		// Only poll if using system accent (not custom)
+		if (!customAccent || !isValidHex(customAccent)) {
+			clearAccentCache(); // Clear cache to get fresh value
+			const newAccent = getSystemAccent();
+			if (newAccent !== currentAccent) {
+				currentAccent = newAccent;
+				refreshIconsAuto(context);
+			}
+		}
+	}, pollInterval);
 }
 
 /**
  * Stop all watching
  */
 function stopWatching() {
-  if (watchInterval) {
-    clearInterval(watchInterval);
-    watchInterval = null;
-  }
+	if (watchInterval) {
+		clearInterval(watchInterval);
+		watchInterval = null;
+	}
 
-  for (const watcher of fileWatchers) {
-    try {
-      watcher.close();
-    } catch {
-      // Ignore errors closing watchers
-    }
-  }
-  fileWatchers = [];
+	// Cancel any pending auto-refresh debounce
+	if (autoRefreshDebounceTimer) {
+		clearTimeout(autoRefreshDebounceTimer);
+		autoRefreshDebounceTimer = null;
+	}
 
-  if (nativeWatcherActive) {
-    stopAccentWatcher();
-    nativeWatcherActive = false;
-  }
+	for (const watcher of fileWatchers) {
+		try {
+			watcher.close();
+		} catch {
+			// Ignore errors closing watchers
+		}
+	}
+	fileWatchers = [];
+
+	// Stop native accent watchers
+	if (nativeWatcherActive) {
+		stopAccentWatcher();
+		nativeWatcherActive = false;
+	}
+}
+
+/**
+ * Automatically refresh icons when accent changes (no user prompt).
+ * Debounced to coalesce rapid-fire triggers from multiple watchers.
+ */
+function refreshIconsAuto(context: vscode.ExtensionContext) {
+	// Clear any pending debounce timer
+	if (autoRefreshDebounceTimer) {
+		clearTimeout(autoRefreshDebounceTimer);
+		autoRefreshDebounceTimer = null;
+	}
+
+	autoRefreshDebounceTimer = setTimeout(async () => {
+		autoRefreshDebounceTimer = null;
+		await doRefreshIconsAuto(context);
+	}, AUTO_REFRESH_DEBOUNCE_MS);
+}
+
+/**
+ * Actual auto-refresh implementation, guarded by a mutex to prevent
+ * concurrent regeneration from multiple watcher triggers.
+ */
+async function doRefreshIconsAuto(context: vscode.ExtensionContext) {
+	// Prevent concurrent regeneration
+	if (isRegenerating) {
+		console.log('Adapt Icons: Regeneration already in progress, skipping');
+		return;
+	}
+
+	const accent = getConfiguredAccent();
+	const lastAccent = getLastGeneratedAccent(context.extensionPath);
+
+	// Skip if already up to date
+	if (lastAccent === accent) {
+		return;
+	}
+
+	isRegenerating = true;
+	console.log(`Adapt Icons: Auto-refreshing icons from ${lastAccent} to ${accent}`);
+
+	try {
+		await generateAdaptIconTheme(context.extensionPath, accent);
+		updateStatusBar(context);
+		
+		// Try automatic theme refresh
+		const refreshed = await forceIconThemeRefresh();
+		
+		if (refreshed) {
+			vscode.window.showInformationMessage(
+				`Adapt Icons: Updated to ${accent}.`,
+			);
+		} else {
+			// Fallback: offer manual window reload if auto-refresh failed
+			vscode.window
+				.showInformationMessage(
+					`Adapt Icons: Icons updated to ${accent}. Reload to apply.`,
+					'Reload Window',
+				)
+				.then((selection) => {
+					if (selection === 'Reload Window') {
+						vscode.commands.executeCommand('workbench.action.reloadWindow');
+					}
+				});
+		}
+	} catch (error) {
+		console.error('Adapt Icons: Auto-refresh failed', error);
+	} finally {
+		isRegenerating = false;
+	}
+}
+
+/**
+ * Get the configured accent color (custom or system)
+ */
+function getConfiguredAccent(): string {
+	const config = vscode.workspace.getConfiguration('adaptIcons');
+	const customAccent = config.get<string>('accentColor');
+
+	if (customAccent && isValidHex(customAccent)) {
+		return normalizeHex(customAccent);
+	}
+
+	return getSystemAccent();
+}
+
+/**
+ * Refresh the icons (manual user-triggered refresh)
+ */
+async function refreshIcons(context: vscode.ExtensionContext) {
+	// Prevent concurrent regeneration
+	if (isRegenerating) {
+		vscode.window.showInformationMessage(
+			'Adapt Icons: Icon regeneration already in progress, please wait...',
+		);
+		return;
+	}
+
+	// Cancel any pending auto-refresh debounce
+	if (autoRefreshDebounceTimer) {
+		clearTimeout(autoRefreshDebounceTimer);
+		autoRefreshDebounceTimer = null;
+	}
+
+	// Clear accent cache to ensure we get the latest system accent
+	clearAccentCache();
+	
+	const accent = getConfiguredAccent();
+	const lastAccent = getLastGeneratedAccent(context.extensionPath);
+
+	// Check if already up to date
+	if (lastAccent === accent) {
+		const choice = await vscode.window.showInformationMessage(
+			`Adapt Icons: Already using ${accent}. Regenerate anyway?`,
+			'Regenerate',
+			'Cancel',
+		);
+		if (choice !== 'Regenerate') {
+			return;
+		}
+	}
+
+	isRegenerating = true;
+
+	// Generate icons with progress
+	const success = await vscode.window.withProgress(
+		{
+			location: vscode.ProgressLocation.Notification,
+			title: `Adapt Icons: Generating icons with ${accent}...`,
+			cancellable: false,
+		},
+		async (progress) => {
+			try {
+				progress.report({ increment: 0, message: 'Processing files...' });
+				await generateAdaptIconTheme(context.extensionPath, accent);
+				progress.report({ increment: 100, message: 'Done!' });
+				return true;
+			} catch (error) {
+				console.error('Adapt Icons: Generation failed', error);
+				vscode.window.showErrorMessage(
+					`Adapt Icons: Failed to generate icons - ${error}`,
+				);
+				return false;
+			}
+		},
+	);
+
+	if (success) {
+		updateStatusBar(context);
+		await promptForReload(accent);
+	}
+
+	isRegenerating = false;
+}
+
+/**
+ * Force VS Code to refresh the icon theme by toggling it off and back on.
+ * 
+ * VS Code aggressively caches icon theme SVGs. To reliably bust this cache,
+ * we switch to a completely different icon theme (not just null), wait for
+ * VS Code to fully unload the current theme, then switch back. The delays
+ * give VS Code enough time to flush its internal caches and re-read the
+ * theme JSON and all referenced SVGs from disk.
+ */
+async function forceIconThemeRefresh(): Promise<boolean> {
+	const workbenchConfig = vscode.workspace.getConfiguration('workbench');
+	const currentTheme = workbenchConfig.get<string>('iconTheme');
+
+	if (currentTheme !== 'adapt-icons') {
+		return false;
+	}
+
+	try {
+		// Step 1: Switch to no icon theme to force VS Code to unload all cached SVGs
+		await workbenchConfig.update('iconTheme', null, vscode.ConfigurationTarget.Global);
+		
+		// Step 2: Wait for VS Code to fully process the theme removal.
+		// VS Code needs time to: persist the setting, unload theme JSON, release SVG caches.
+		// 300ms is enough for the config write + internal cache invalidation.
+		await new Promise(resolve => setTimeout(resolve, 300));
+		
+		// Step 3: Switch back to adapt-icons, which forces a full reload from disk
+		await workbenchConfig.update('iconTheme', 'adapt-icons', vscode.ConfigurationTarget.Global);
+		
+		// Step 4: Give VS Code time to re-read and render the theme before
+		// we consider the refresh complete. This prevents any subsequent
+		// operations from interfering with the theme load.
+		await new Promise(resolve => setTimeout(resolve, 200));
+		
+		return true;
+	} catch (error) {
+		console.error('Adapt Icons: Failed to refresh theme', error);
+		return false;
+	}
+}
+
+/**
+ * Prompt user to reload VS Code or attempt automatic refresh
+ */
+async function promptForReload(accent: string) {
+	const workbenchConfig = vscode.workspace.getConfiguration('workbench');
+	const currentTheme = workbenchConfig.get<string>('iconTheme');
+
+	if (currentTheme !== 'adapt-icons') {
+		vscode.window.showInformationMessage(
+			`Adapt Icons: Icons generated with ${accent}. Select "Adapt Icons" as your icon theme to use them.`,
+		);
+		return;
+	}
+
+	// Try automatic refresh first
+	const refreshed = await forceIconThemeRefresh();
+	
+	if (refreshed) {
+		vscode.window.showInformationMessage(
+			`Adapt Icons: Updated to ${accent}.`,
+		);
+	} else {
+		// Fallback to manual reload if automatic refresh fails
+		vscode.window
+			.showInformationMessage(
+				`Adapt Icons: Icons updated to ${accent}. Reload to apply.`,
+				'Reload Window',
+			)
+			.then((selection) => {
+				if (selection === 'Reload Window') {
+					vscode.commands.executeCommand('workbench.action.reloadWindow');
+				}
+			});
+	}
+}
+
+/**
+ * Update the status bar item
+ */
+function updateStatusBar(context: vscode.ExtensionContext) {
+	if (!statusBarItem) return;
+
+	const configuredAccent = getConfiguredAccent();
+	const lastGenerated = getLastGeneratedAccent(context.extensionPath);
+
+	if (lastGenerated && lastGenerated === configuredAccent) {
+		statusBarItem.text = `$(symbol-color) ${configuredAccent}`;
+		statusBarItem.tooltip = 'Adapt Icons: Click to refresh icons';
+		statusBarItem.backgroundColor = undefined;
+	} else if (lastGenerated) {
+		statusBarItem.text = `$(sync~spin) ${configuredAccent}`;
+		statusBarItem.tooltip = `Adapt Icons: Click to update from ${lastGenerated} to ${configuredAccent}`;
+		statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+	} else {
+		statusBarItem.text = `$(symbol-color) ${configuredAccent}`;
+		statusBarItem.tooltip = 'Adapt Icons: Click to generate icons';
+		statusBarItem.backgroundColor = undefined;
+	}
+
+	statusBarItem.show();
+}
+
+/**
+ * Show debug information
+ */
+function showDebugInfo(context: vscode.ExtensionContext) {
+	const configuredAccent = getConfiguredAccent();
+	const lastGenerated = getLastGeneratedAccent(context.extensionPath);
+	const workbenchConfig = vscode.workspace.getConfiguration('workbench');
+	const currentTheme = workbenchConfig.get<string>('iconTheme');
+	const config = vscode.workspace.getConfiguration('adaptIcons');
+
+	const debugInfo = [
+		'=== Adapt Icons Debug Info ===',
+		'',
+		`Extension Path: ${context.extensionPath}`,
+		`Current Icon Theme: ${currentTheme}`,
+		`Using Adapt Icons: ${currentTheme === 'adapt-icons' ? 'Yes' : 'No'}`,
+		'',
+		`Configured Accent: ${configuredAccent}`,
+		`Custom Accent Setting: ${config.get<string>('accentColor') || '(empty - using system)'}`,
+		`System Accent: ${getSystemAccent()}`,
+		`Last Generated Accent: ${lastGenerated || '(never generated)'}`,
+		`Needs Update: ${lastGenerated !== configuredAccent ? 'Yes' : 'No'}`,
+		'',
+		'To update icons:',
+		'1. Run "Adapt Icons: Refresh from System Accent" command',
+		'2. Or click the accent color in the status bar',
+		'3. Reload window when prompted',
+	];
+
+	const outputChannel = vscode.window.createOutputChannel('Adapt Icons');
+	outputChannel.clear();
+	for (const line of debugInfo) {
+		outputChannel.appendLine(line);
+	}
+	outputChannel.show();
 }

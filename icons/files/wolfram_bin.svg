@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  - The MIT License (MIT)
+  -
+  - Copyright (c) 2015-2024 Elior "Mallowigi" Boukhobza
+  -
+  - Permission is hereby granted, free of charge, to any person obtaining a copy
+  - of this software and associated documentation files (the "Software"), to deal
+  - in the Software without restriction, including without limitation the rights
+  - to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  - copies of the Software, and to permit persons to whom the Software is
+  - furnished to do so, subject to the following conditions:
+  -
+  - The above copyright notice and this permission notice shall be included in all
+  - copies or substantial portions of the Software.
+  -
+  - THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  - IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  - FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  - AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  - LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  - OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  - SOFTWARE.
+  -
+  -->
+
+<svg
+   width="16px"
+   height="16px"
+   viewBox="0 0 16 16"
+   version="1.1"
+   fill="#cb506c"
+   id="svg4"
+   sodipodi:docname="wolfram_bin.svg"
+   xml:space="preserve"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><defs
+     id="defs8" /><sodipodi:namedview
+     id="namedview6"
+     borderopacity="1"
+     showgrid="false"
+     pagecolor="#b6ffb9"
+     bordercolor="#000000" /><g
+     id="g3412"
+     transform="matrix(0.56521929,0,0,0.56521929,-1.0510536,-0.99060526)"><path
+       id="path10683"
+       d="M 16.079004 2.0843331 C 15.49217 2.0988724 14.88291 3.4783115 13.166003 6.1756655 L 15.177114 6.1756655 L 15.177114 14.496551 L 8.9364494 14.496551 L 8.9364494 6.1756655 L 12.074059 6.1756655 C 6.1712583 3.6082777 7.4570513 3.553007 7.9481715 10.156421 C 1.3245768 11.771901 1.8966907 10.742996 6.0580036 15.999701 C 1.6121315 21.155735 1.5119515 19.809309 7.9481715 21.842981 C 6.9330106 28.729915 5.8310432 28.069593 12.927572 25.457452 C 16.515786 31.343782 15.470792 30.988706 19.071481 25.457452 C 25.907645 28.479402 24.723623 28.789091 24.050882 21.842981 C 31.000725 19.861213 30.23578 21.205801 25.94105 15.999701 C 30.631628 10.579498 30.874074 11.814028 24.050882 10.156421 C 24.959947 3.7682768 26.158659 3.8092435 20.032115 6.1756655 L 21.417778 6.1756655 L 21.417778 12.41633 L 23.497999 12.41633 L 23.497999 14.496551 L 17.257335 14.496551 L 17.257335 12.41633 L 19.337556 12.41633 L 19.337556 8.2558869 L 17.257335 8.2558869 L 17.257335 6.1756655 L 18.853784 6.1756655 C 17.229456 3.4201542 16.665837 2.0697937 16.079004 2.0843331 z M 11.016671 8.2558869 L 11.016671 12.41633 L 13.096892 12.41633 L 13.096892 8.2558869 L 11.016671 8.2558869 z M 8.9364494 16.576772 L 13.096892 16.576772 L 13.096892 22.817437 L 15.177114 22.817437 L 15.177114 24.901113 L 8.9364494 24.901113 L 8.9364494 22.817437 L 11.016671 22.817437 L 11.016671 18.656994 L 8.9364494 18.656994 L 8.9364494 16.576772 z M 17.257335 16.576772 L 23.497999 16.576772 L 23.497999 24.901113 L 17.257335 24.901113 L 17.257335 16.576772 z M 19.337556 18.656994 L 19.337556 22.817437 L 21.417778 22.817437 L 21.417778 18.656994 L 19.337556 18.656994 z " /></g></svg>

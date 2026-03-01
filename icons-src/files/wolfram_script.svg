@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  - The MIT License (MIT)
+  -
+  - Copyright (c) 2015-2022 Elior "Mallowigi" Boukhobza
+  -
+  - Permission is hereby granted, free of charge, to any person obtaining a copy
+  - of this software and associated documentation files (the "Software"), to deal
+  - in the Software without restriction, including without limitation the rights
+  - to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  - copies of the Software, and to permit persons to whom the Software is
+  - furnished to do so, subject to the following conditions:
+  -
+  - The above copyright notice and this permission notice shall be included in all
+  - copies or substantial portions of the Software.
+  -
+  - THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  - IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  - FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  - AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  - LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  - OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  - SOFTWARE.
+  -
+  -
+  -->
+
+<svg
+   big="true"
+   version="1.1"
+   viewBox="0 0 512 512"
+   width="16px"
+   height="16px"
+   id="svg120"
+   sodipodi:docname="wolfram_script.svg"
+   inkscape:version="1.4.3 (0d15f75042, 2025-12-25)"
+   xml:space="preserve"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><defs
+     id="defs124" /><sodipodi:namedview
+     id="namedview122"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050"
+     showgrid="false"
+     inkscape:zoom="20.85965"
+     inkscape:cx="8.6530694"
+     inkscape:cy="11.505466"
+     inkscape:window-width="717"
+     inkscape:window-height="1070"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="text6272" /><path
+     fill="#cb506c"
+     iconColor="Wolfram Language"
+     d="m 185.78502,281.82767 c -93.447615,-53.87307 -93.447655,-189.287085 0,-243.160175 93.44761,-53.873107 210.89134,13.833888 210.89134,121.580085 0,107.74622 -117.44369,175.45321 -210.89131,121.58009 z m 90.16594,-154.27691 c 1.08716,-21.93718 1.44956,-31.27503 0.72475,-49.226177 l -20.48797,19.762871 c 1.44957,4.655156 3.59595,17.226566 3.59595,17.226566 0,0 10.78752,6.82914 16.16727,12.23674 z m 25.03157,151.3166 -41.19879,-67.27753 c -16.52301,-0.4775 -35.53198,-5.65873 -72.22349,-0.33189 1.13735,-11.32099 5.78639,-22.00293 13.29629,-30.55049 -5.58842,-2.373 -11.35849,-4.29325 -17.25445,-5.74214 2.17434,-7.91627 22.99665,-17.25432 25.89552,-18.31349 -1.44941,1.78394 -7.19153,8.25089 -9.36588,13.2961 7.55408,1.05927 17.61685,7.16382 17.61685,7.16382 0,0 -10.78747,10.06256 -15.80493,22.63393 30.51806,-5.23716 32.23803,0.16841 131.84731,8.64103 12.73197,-16.08817 11.65641,-9.90354 3.95816,-23.72116 -24.05587,-12.20884 -59.98628,-41.67215 -83.70764,-65.39339 L 235.69991,57.836782 c -20.09766,15.080129 -23.33117,43.818678 -34.48096,63.247168 -21.43566,16.08364 -34.81553,70.99635 -45.57509,116.48744 11.95821,18.03468 67.84686,69.30971 145.33867,41.29597 z m -46.94098,-124.3897 c 12.20913,-1.78406 21.18468,4.68288 29.46359,10.78736 l -13.65869,3.9582 c -6.8294,-3.9582 -12.93393,-6.10458 -18.67613,-5.40767 z m 128.59981,5.76992 C 382.64136,63.265386 276.9304,2.3224008 192.81834,50.813517 131.95071,85.904045 115.17449,159.30922 142.40048,215.6426 c 16.70072,-47.55567 34.29874,-83.49453 53.0762,-104.25893 10.06275,-29.825711 24.0559,-55.358623 42.39748,-70.438786 l 15.08014,46.355227 29.82598,-29.100945 c 0,-0.362433 4.68293,43.121914 2.50862,75.818554 19.03845,19.40068 74.73207,54.60613 74.73207,54.60613 0,0 -19.40067,27.31692 -22.99662,28.73855 -6.71547,2.71613 -34.75298,-1.87065 -57.11526,-3.95812 l 43.30783,53.91853 c 34.91321,-21.77058 59.42444,-60.28682 59.42444,-107.07523 z"
+     id="path118"
+     style="fill-opacity:1;stroke-width:7.62305;stroke-dasharray:none;stroke-opacity:1"
+     inkscape:label="path118" /><g
+     id="g6359"
+     transform="matrix(2.2447455,0,0,2.0387325,-283.43228,-412.73955)"><text
+       xml:space="preserve"
+       style="font-size:170.667px;fill:6676b3;stroke:#f40803;stroke-width:3.42618;stroke-dasharray:none;stroke-opacity:1"
+       x="166.646"
+       y="439.60583"
+       id="text6218"><tspan
+         id="tspan6216"
+         fill="#cb506c"
+         stroke="none"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:170.667px;font-family:'AnonymicePro Nerd Font Mono';-inkscape-font-specification:'AnonymicePro Nerd Font Mono';stroke-width:3.42618"
+         x="166.646"
+         y="439.60583"
+         sodipodi:role="line">&gt;</tspan></text><g aria-label="_" stroke="none" transform="scale(1.0428707,0.95889165)" id="text6272" style="font-size:100px;font-family:'AnonymicePro Nerd Font Mono';-inkscape-font-specification:'AnonymicePro Nerd Font Mono';fill:6676b3;stroke-width:5.88535"><g
+         id="path628"
+         transform="matrix(1,0,0,0.71252495,0,132.52375)"><path fill="#cb506c" style="-inkscape-font-specification:'AnonymicePro Nerd Font Mono';stroke:none;-inkscape-stroke:none"
+           d="m 295.04265,458.04913 h -61.83647 v -7.76273 h 61.83647 z"
+           id="path633" /><path fill="#cb506c" style="-inkscape-font-specification:'AnonymicePro Nerd Font Mono';stroke:none;-inkscape-stroke:none"
+           d="m 230.26367,447.34375 v 13.64844 h 67.7207 v -2.94336 -10.70508 z m 5.88477,5.88477 h 55.95117 v 1.8789 h -55.95117 z"
+           id="path689" /></g></g></g></svg>

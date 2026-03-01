@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  - The MIT License (MIT)
+  -
+  - Copyright (c) 2015-2022 Elior "Mallowigi" Boukhobza
+  -
+  - Permission is hereby granted, free of charge, to any person obtaining a copy
+  - of this software and associated documentation files (the "Software"), to deal
+  - in the Software without restriction, including without limitation the rights
+  - to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  - copies of the Software, and to permit persons to whom the Software is
+  - furnished to do so, subject to the following conditions:
+  -
+  - The above copyright notice and this permission notice shall be included in all
+  - copies or substantial portions of the Software.
+  -
+  - THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  - IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  - FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  - AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  - LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  - OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  - SOFTWARE.
+  -
+  -
+  -->
+
+<svg
+   big="true"
+   version="1.1"
+   viewBox="0 0 512 512"
+   width="16px"
+   height="16px"
+    fill="#cb506c"
+	stroke="none"
+   id="svg120"
+   sodipodi:docname="wolfram_2.svg"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   xml:space="preserve"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><defs
+     id="defs124" /><sodipodi:namedview
+     id="namedview122"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050"
+     showgrid="false"
+     inkscape:zoom="14.75"
+     inkscape:cx="9.8983051"
+     inkscape:cy="3.3559322"
+     inkscape:window-width="1598"
+     inkscape:window-height="703"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg120" /><g
+     id="g912"><path
+       id="rect917"
+       style="opacity:1;stroke-width:32.064"
+       d="M 84.8125 0 C 37.835416 0 0 37.835416 0 84.8125 L 0 427.875 C 0 474.85208 37.835416 512.6875 84.8125 512.6875 L 427.1875 512.6875 C 474.16458 512.6875 512 474.85208 512 427.875 L 512 84.8125 C 512 37.835416 474.16458 0 427.1875 0 L 84.8125 0 z M 258.4375 22.5625 C 378.44279 24.824145 487.8125 121.34242 487.8125 255.1875 C 487.8125 433.64762 293.33888 545.79257 138.5625 456.5625 C -16.213858 367.33251 -16.213873 143.04256 138.5625 53.8125 C 177.25658 31.504986 218.43574 21.808618 258.4375 22.5625 z M 258.0625 45.8125 C 222.05697 45.133931 185.016 53.858539 150.1875 73.9375 C 49.373025 132.05798 21.593383 253.63247 66.6875 346.9375 C 94.348741 268.17104 123.52399 208.64207 154.625 174.25 C 171.29176 124.84964 194.43352 82.602286 224.8125 57.625 L 249.8125 134.375 L 299.1875 86.1875 C 299.1875 85.587208 306.9763 157.59454 303.375 211.75 C 334.90822 243.88337 427.125 302.1875 427.125 302.1875 C 427.125 302.1875 395.01843 347.45789 389.0625 349.8125 C 377.93975 354.31123 331.47594 346.70749 294.4375 343.25 L 366.1875 432.5625 C 424.01391 396.50389 464.625 332.68317 464.625 255.1875 C 464.625 134.71373 366.0791 47.848208 258.0625 45.8125 z M 221.1875 85.5625 C 187.89991 110.53975 182.59223 158.1331 164.125 190.3125 C 128.62134 216.95183 106.44596 307.90309 88.625 383.25 C 108.43128 413.12088 200.96356 498.08666 329.3125 451.6875 L 261.125 340.25 C 233.75812 339.45912 202.27181 330.86468 141.5 339.6875 C 143.38381 320.93653 151.06141 303.21984 163.5 289.0625 C 154.24391 285.13208 144.70294 281.96235 134.9375 279.5625 C 138.53885 266.45082 173.01115 251.00434 177.8125 249.25 C 175.41186 252.20479 165.91386 262.89363 162.3125 271.25 C 174.82429 273.00446 191.5 283.125 191.5 283.125 C 191.5 283.125 173.62288 299.80304 165.3125 320.625 C 215.8593 311.9507 218.70559 320.9043 383.6875 334.9375 C 404.77534 308.29067 403.00052 318.51112 390.25 295.625 C 350.40651 275.4035 290.91446 226.60203 251.625 187.3125 L 221.1875 85.5625 z M 289.0625 119.5 L 255.125 152.25 C 257.5259 159.96038 261.125 180.75 261.125 180.75 C 261.125 180.75 278.9646 192.10595 287.875 201.0625 C 289.6757 164.72796 290.26299 149.23254 289.0625 119.5 z M 251.625 245.625 C 271.84687 242.67007 286.66273 253.38918 300.375 263.5 L 277.75 270.0625 C 266.43855 263.5065 256.32329 259.97071 246.8125 261.125 L 251.625 245.625 z " /></g></svg>
