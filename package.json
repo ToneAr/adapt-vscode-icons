@@ -2,7 +2,7 @@
   "name": "adapt-vscode-icons",
   "displayName": "Adapt Icons",
   "description": "A dynamic icon theme for VS Code and Cursor that converts any icon set to monochrome using your system accent color",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "publisher": "Tone",
   "license": "MIT",
   "repository": {
