@@ -464,6 +464,10 @@ function addCommonFileExtensions(
 		pdf: ['pdf'],
 		zip: ['zip', 'archive'],
 		gitignore: ['git', 'gitignore'],
+		// Cursor rule files (.cursor/rules/*.mdc). Listed here because the
+		// bundled associations also claim .mdc for camera RAW images, and the
+		// first extension mapping wins.
+		mdc: ['cursor'],
 	};
 
 	for (const [ext, possibleNames] of Object.entries(extensionMappings)) {
@@ -506,6 +510,7 @@ function addCommonFolderNames(
 		'.git': ['git'],
 		'.github': ['github'],
 		'.vscode': ['vscode'],
+		'.cursor': ['cursor'],
 		docker: ['docker'],
 		scripts: ['scripts', 'script'],
 	};

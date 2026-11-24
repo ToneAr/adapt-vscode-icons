@@ -43,6 +43,28 @@
       "regex": [
         {
           "value": {
+            "fileNames": ".cursorrules,.cursorignore,.cursorindexingignore",
+            "name": "Cursor",
+            "priority": "100",
+            "iconType": "FILE",
+            "pattern": "^\\.cursor(rules|ignore|indexingignore)$",
+            "url": "https://cursor.com/",
+            "icon": "/icons/files/cursor.svg"
+          }
+        },
+        {
+          "value": {
+            "fileNames": "*.mdc",
+            "name": "Cursor Rules",
+            "priority": "100",
+            "iconType": "FILE",
+            "pattern": ".*\\.mdc$",
+            "url": "https://docs.cursor.com/context/rules",
+            "icon": "/icons/files/cursor.svg"
+          }
+        },
+        {
+          "value": {
             "fileNames": "ARCHITECTURE,architecture.md,architecture,architecture.txt,architecture.txt",
             "name": "Architecture",
             "iconColor": "66BB6A",
