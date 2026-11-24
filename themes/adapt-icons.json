@@ -7258,6 +7258,15 @@
     },
     "_folder_yarn_open": {
       "iconPath": "../icons/foldersOpen/yarn.svg"
+    },
+    "_file_cursor": {
+      "iconPath": "../icons/files/cursor.svg"
+    },
+    "_folder_cursor": {
+      "iconPath": "../icons/folders/cursor.svg"
+    },
+    "_folder_cursor_open": {
+      "iconPath": "../icons/foldersOpen/cursor.svg"
     }
   },
   "fileExtensions": {
@@ -8620,7 +8629,8 @@
     "nsf": "_file_chiptune",
     "gym": "_file_chiptune",
     "sfx": "_file_chiptune",
-    "gitbook": "_file_gitbook"
+    "gitbook": "_file_gitbook",
+    "mdc": "_file_cursor"
   },
   "fileNames": {
     "steepfile": "_file_rbsconfig",
@@ -10655,7 +10665,10 @@
     "robots": "_file_robots",
     "main.yml": "_file_githubActions",
     "workflow.yaml": "_file_githubActions",
-    "ci.yaml": "_file_githubActions"
+    "ci.yaml": "_file_githubActions",
+    ".cursorrules": "_file_cursor",
+    ".cursorignore": "_file_cursor",
+    ".cursorindexingignore": "_file_cursor"
   },
   "folderNames": {
     "src": "_folder_src",
@@ -13183,7 +13196,10 @@
     ".machines": "_folder_xstate",
     "yarn": "_folder_yarn",
     ".yarn": "_folder_yarn",
-    "_yarn": "_folder_yarn"
+    "_yarn": "_folder_yarn",
+    "cursor": "_folder_cursor",
+    ".cursor": "_folder_cursor",
+    "_cursor": "_folder_cursor"
   },
   "folderNamesExpanded": {
     "src": "_folder_src_open",
@@ -15708,7 +15724,10 @@
     ".machines": "_folder_xstate_open",
     "yarn": "_folder_yarn_open",
     ".yarn": "_folder_yarn_open",
-    "_yarn": "_folder_yarn_open"
+    "_yarn": "_folder_yarn_open",
+    "cursor": "_folder_cursor_open",
+    ".cursor": "_folder_cursor_open",
+    "_cursor": "_folder_cursor_open"
   },
   "languageIds": {
     "javascript": "_file_js",

@@ -4,6 +4,16 @@
       "regex": [
         {
           "value": {
+            "folderNames": "cursor,.cursor,_cursor",
+            "name": "Cursor",
+            "priority": "100",
+            "iconType": "FOLDER",
+            "pattern": "^[\\._]?cursor$",
+            "icon": "/cursor.svg"
+          }
+        },
+        {
+          "value": {
             "folderNames": ".acf,acf,_acf,.acf-json",
             "name": "ACF",
             "folderColor": "00ad9f",

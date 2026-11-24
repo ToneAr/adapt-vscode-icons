@@ -1,9 +1,10 @@
 {
   "name": "adapt-vscode-icons",
   "displayName": "Adapt Icons",
-  "description": "A dynamic icon theme that converts any icon set to monochrome using your system accent color",
+  "description": "A dynamic icon theme for VS Code and Cursor that converts any icon set to monochrome using your system accent color",
   "version": "0.9.0",
   "publisher": "Tone",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/ToneAr/adapt-vscode-icons"
@@ -23,7 +24,9 @@
     "dynamic",
     "accent color",
     "monochrome icons",
-    "file icons"
+    "file icons",
+    "cursor",
+    "vscode"
   ],
   "activationEvents": [
     "onStartupFinished"
@@ -66,7 +69,10 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "lint": "eslint src --ext ts"
+    "lint": "eslint src --ext ts",
+    "package": "npx --yes @vscode/vsce package",
+    "publish:vscode": "npx --yes @vscode/vsce publish",
+    "publish:openvsx": "npx --yes ovsx publish"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
