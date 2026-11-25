@@ -39,7 +39,7 @@ Cursor is built on VS Code and runs VS Code extensions. It installs extensions f
 2. Install a packaged `.vsix` directly:
 
    ```bash
-   cursor --install-extension adapt-vscode-icons-0.9.0.vsix
+   cursor --install-extension adapt-vscode-icons-0.10.0.vsix
    ```
 
    (or drag the `.vsix` onto the Extensions view, or use **Extensions: Install from VSIX...** from the Command Palette)
@@ -99,6 +99,23 @@ npm run publish:openvsx  # Open VSX, used by Cursor, VSCodium, etc. (needs an OV
 ```
 
 Cursor installs extensions from Open VSX, so publish there for the extension to be found in Cursor's Extensions view.
+
+### Releasing with GitHub Actions
+
+`.github/workflows/publish.yml` packages the extension and publishes it to both registries. It needs two repository secrets (**Settings → Secrets and variables → Actions**):
+
+| Secret | Where to get it |
+|--------|-----------------|
+| `VSCE_PAT` | Azure DevOps personal access token, organization **All accessible organizations**, scope **Marketplace → Manage** |
+| `OVSX_PAT` | [open-vsx.org](https://open-vsx.org/user-settings/tokens) access token (the `Tone` namespace must exist and belong to you) |
+
+Then bump `version` in `package.json`, add a CHANGELOG entry, and push a matching tag:
+
+```bash
+git tag v0.10.0 && git push origin v0.10.0
+```
+
+The workflow can also be run manually from the **Actions** tab, with a choice of registries. Versions already on a registry are skipped, so re-running is safe.
 
 ## License
 

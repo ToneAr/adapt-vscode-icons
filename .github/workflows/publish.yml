@@ -1,0 +1,76 @@
+name: Publish
+
+# Publishes the extension to the VS Code Marketplace and to Open VSX
+# (the registry Cursor, VSCodium and other VS Code forks install from).
+#
+# Trigger by pushing a tag that matches package.json, e.g. `git tag v1.2.3 && git push origin v1.2.3`,
+# or run it manually from the Actions tab.
+#
+# Required repository secrets:
+#   VSCE_PAT  Azure DevOps personal access token with Marketplace > Manage scope
+#   OVSX_PAT  Open VSX access token (https://open-vsx.org/user-settings/tokens)
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      vscode:
+        description: Publish to the VS Code Marketplace
+        type: boolean
+        default: true
+      openvsx:
+        description: Publish to Open VSX (Cursor, VSCodium)
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+
+      - name: Check tag matches package.json version
+        if: github.ref_type == 'tag'
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $version"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: if [ -f package-lock.json ]; then npm ci; fi
+
+      - name: Package
+        id: package
+        run: npx --yes @vscode/vsce@3 package --out extension.vsix
+
+      - name: Upload VSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsix
+          path: extension.vsix
+
+      - name: Publish to VS Code Marketplace
+        if: ${{ !cancelled() && steps.package.outcome == 'success' && (github.event_name == 'push' || inputs.vscode) }}
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          if [ -z "$VSCE_PAT" ]; then echo "::error::The VSCE_PAT repository secret is not set"; exit 1; fi
+          npx --yes @vscode/vsce@3 publish --packagePath extension.vsix --skip-duplicate
+
+      - name: Publish to Open VSX
+        if: ${{ !cancelled() && steps.package.outcome == 'success' && (github.event_name == 'push' || inputs.openvsx) }}
+        env:
+          OVSX_PAT: ${{ secrets.OVSX_PAT }}
+        run: |
+          if [ -z "$OVSX_PAT" ]; then echo "::error::The OVSX_PAT repository secret is not set"; exit 1; fi
+          npx --yes ovsx@1 publish extension.vsix --skip-duplicate
